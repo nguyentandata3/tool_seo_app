@@ -17,6 +17,99 @@ class SerprobotController extends Controller
         return view('serprobot.index');
     }
 
+    public function get_apikey()
+    {
+        return view('serprobot.apikey');
+    }
+    public function post_apikey(Request $request)
+    {
+        $apikey = $request->apikey;
+        $url_project = "https://api.serprobot.com/v1/api.php?api_key=$apikey&action=list_projects";
+        $projects = (json_decode(file_get_contents($url_project),true));
+        DB::table('users')->where('uuid', );
+        foreach ($projects as $key_project => $value) {
+            $data_project['project_id'] = $value['id'];
+            $data_project['name'] = $value['name'];
+            $data_project['region'] = $value['region'];
+            $data_project['url'] = $value['url'];
+            $data_project['created_at'] = $value['created'];
+            $data_project['number_of_keywords'] = $value['number_of_keywords'];
+            $data_project['competitors'] = json_encode($value['competitors']);
+            $data_project['notes'] = $value['notes'];
+            $data_project['tags'] = json_encode($value['tags']);
+            $data_project['user_id'] = 1;
+            DB::table('tool_cms_projects')->insert($data_project);
+            $project_id = DB::table('tool_cms_projects')->ORDERBY('id', 'DESC')->first()->id;
+            $url_keywords = "https://api.serprobot.com/v1/api.php?api_key=b2c40bfc55161461279f9fe89089e1a0&action=project&project_id=$value[id]";
+            $data_keywords = json_decode(file_get_contents($url_keywords));
+            $data_keywords = $data_keywords->keywords;
+            foreach($data_keywords as $key_keyword => $keyword) {
+                $data_keyword['serprobot_keyword_id'] = $keyword->id;
+                $data_keyword['keyword'] = $keyword->keyword;
+                $data_keyword['first_position'] = $keyword->first_position;
+                $data_keyword['best_position'] = $keyword->best_position;
+                $data_keyword['current_position'] = $keyword->current_position;
+                $data_keyword['latest_change'] = $keyword->latest_change;
+                $data_keyword['latest_found_serp'] = $keyword->latest_found_serp;
+                $data_keyword['created_at'] = $keyword->created;
+                $data_keyword['last_checked'] = $keyword->last_checked;
+                $data_keyword['project_id'] = $project_id;
+                DB::table('tool_cms_keywords')->insert($data_keyword);
+                $keyword_id = DB::table('tool_cms_keywords')->ORDERBY('id', 'DESC')->first()->id;
+                $url_data_serprobot = "https://api.serprobot.com/v1/api.php?api_key=b2c40bfc55161461279f9fe89089e1a0&action=keyword&keyword_id=$data_keyword[serprobot_keyword_id]";
+                $data_serprobots = json_decode(file_get_contents($url_data_serprobot));
+                $data_serprobots = $data_serprobots->check_data;
+                foreach($data_serprobots as $key_serprobot => $serprobot ) {
+                    $data_serprobot['serprobot_id'] = $serprobot->id;
+                    $data_serprobot['position'] = $serprobot->position;
+                    $data_serprobot['link_top_10'] = json_encode($serprobot->top_serps);
+                    $data_serprobot['keyword_id'] = $keyword_id;
+                    $data_serprobot['created_at'] = $serprobot->created;
+                    $data_serprobot['found_serp'] = $serprobot->found_serp;
+                    $data_serprobot['competition_details'] = json_encode($serprobot->competition_details);
+                    DB::table('tool_cms_data_serprobots')->insert($data_serprobot);
+                    $serprobot_id = DB::table('tool_cms_data_serprobots')->ORDERBY('id', 'DESC')->first()->id;
+                    foreach($serprobot->top_serps as $key_top10 => $value) {
+                        $data_seorank['link'] = $value;
+                        $data_seorank['created_at'] = $data_serprobot['created_at'];
+                        $data_seorank['data_serprobot_id'] = $serprobot_id;
+                        DB::table('tool_cms_data_seoranks')->insert($data_seorank);
+                    }
+                }
+            }
+        }
+
+        return redirect()->route('serprobot.index')->with(['success' => "Thêm key: $apikey thành công"]);
+    }
+
+    public function get_project($project_id)
+    {
+        $data['projects'] = DB::table('tool_cms_projects')->where('project_id', $project_id)->get();
+        return view('Serprobot.project', $data);
+    }
+
+    public function get_seorank($project_id, $keyword_id)
+    {
+        // $data['exams'] = DB::table('exams')
+        //     ->select('exams.*', 'subjects.name as subject_name')
+        //     ->join('subjects', 'exams.subject_id', '=', 'subjects.id')
+        //     ->ORDERBY('id', 'DESC')
+        //     ->where('subject_id', $subject_id)
+        //     ->get();
+        $data['serprobots'] = DB::table('tool_cms_data_serprobots')
+            ->select('tool_cms_data_serprobots.*', 'tool_cms_keywords.keyword as keyword_keyword')
+            ->join('tool_cms_keywords', 'tool_cms_data_serprobots.keyword_id', '=', 'tool_cms_keywords.id')
+            ->where('keyword_id', $keyword_id)
+            ->get();
+        $data['keyword'] = DB::table('tool_cms_keywords')->where('id', $keyword_id)->first();
+        return view('Serprobot.show_seorank', ['data' => $data]);
+    }
+
+    public function post_seorank(Request $request)
+    {
+
+    }
+
     /**
      * Show the form for creating a new resource.
      *
@@ -27,13 +120,25 @@ class SerprobotController extends Controller
         //
     }
 
+    public function keyword()
+    {
+        return view('serprobot.keyword');
+    }
+
+    public function apikey()
+    {
+        return view('serprobot.apikey');
+    }
+
+
+
     /**
      * Store a newly created resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store_(Request $request)
     {
         $key_api = 'e241bf657e18550918b0c47d5fcf63f7';
         $keyword = str_replace(" ", "%20", $request->keyword);
@@ -113,7 +218,6 @@ class SerprobotController extends Controller
                 return redirect()->route('serprobot.seorank', ['_token' => $request->token, 'top10' => $top10]);
             }
         }
-
     }
 
     public function seorank(Request $request)

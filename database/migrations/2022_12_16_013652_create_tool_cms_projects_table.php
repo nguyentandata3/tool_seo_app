@@ -13,14 +13,16 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('serprobots', function (Blueprint $table) {
+        Schema::create('tool_cms_projects', function (Blueprint $table) {
             $table->id();
-            $table->string('keyword');
-            $table->string('domain');
-            $table->string('position')->nullable();
-            $table->string('found_serp')->nullable();
+            $table->bigInteger('project_id');
+            $table->string('name');
             $table->string('region');
-            $table->longtext('top10');
+            $table->string('url');
+            $table->tinyInteger('number_of_keywords');
+            $table->text('competitors')->nullable();
+            $table->text('notes')->nullable();
+            $table->text('tags')->nullable();
 
             $table->unsignedBigInteger('user_id');
             $table->foreign('user_id')->references('id')->on('users');
@@ -35,6 +37,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('serprobots');
+        Schema::dropIfExists('tool_cms_projects');
     }
 };

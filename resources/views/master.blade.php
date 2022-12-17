@@ -2,9 +2,6 @@
 <!DOCTYPE html>
 
 <html lang="en">
-    <?php
-    header("Access-Control-Allow-Origin: *");
-    ?>
 <head>
 
     <meta charset="utf-8" />
@@ -135,8 +132,13 @@
                         </li>
 
                         <li class="dropdown d-none d-xl-block">
-                            <a class="nav-link waves-effect waves-light" href="{{route('serprobot.index')}}">
-                                Serprobot
+                            <a class="nav-link waves-effect waves-light" href="#">
+                                Tìm theo keyword
+                            </a>
+                        </li>
+                        <li class="dropdown d-none d-xl-block">
+                            <a class="nav-link waves-effect waves-light" href="{{route('serprobot.get_apikey')}}">
+                                Tìm theo KEY API Serprobot
                             </a>
                         </li>
                     </ul>

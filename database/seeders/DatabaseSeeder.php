@@ -18,6 +18,8 @@ class DatabaseSeeder extends Seeder
     public function run()
     {
         DB::table('users')->insert([
+            'api_key' => 'b2c40bfc55161461279f9fe89089e1a0',
+            'uuid' => Str::uuid(),
             'name' => Str::random(10),
             'email' => Str::random(10).'@gmail.com',
             'password' => Hash::make('password'),
